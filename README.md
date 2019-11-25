@@ -50,7 +50,7 @@ The uspString is composed of three elements:
 *Current Possible Values*: [  
 	`N` = No  
 	`Y` = Yes  
-	`-` = Not Applicable  (The user is not in the CCPA enforcement zone)
+	`-` = Not Applicable
 ]  
 *Description*: Has explicit notice been provided. For instance, CCPA 1798.115(d).
 
@@ -61,7 +61,7 @@ The uspString is composed of three elements:
 *Current Possible Values*: [  
 	`N` = No, user has not opted out of the sale.  
 	`Y` = Yes, the user has opted out of their data being used for the sale.  
-	`-` = Not Applicable  (The user is not in the CCPA enforcement zone)
+	`-` = Not Applicable
 ]  
 *Description*: Has user opted-out of the sale of their data
 
@@ -72,7 +72,7 @@ The uspString is composed of three elements:
 *Current Possible Values*: [  
 	`N` = No, the publisher has not signed the LSPA.  
 	`Y` = Yes, the publisher has signed the LSPA.  
-	`-` = Not Applicable (The user is not in the CCPA enforcement zone)
+	`-` = Not Applicable
 ]  
 *Description*: "Publisher is a signatory to the IAB Limited Service Provider Agreement (LSPA) and the publisher declares that the transaction is covered as a “Covered Opt Out Transaction” or a “Non Opt Out Transaction” as those terms are defined in the Agreement"
 
