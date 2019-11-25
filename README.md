@@ -20,6 +20,12 @@ The proposed IAB framework is relatively straightforward to implement, adding a 
 - https://iabtechlab.com/wp-content/uploads/2019/10/CCPA_Compliance_Framework_US_Privacy_String_IABTechLab_Draft_for_Public_Comment.pdf
 - https://iabtechlab.com/wp-content/uploads/2019/10/CCPA_Compliance_Framework_US_Privacy_USER_SIGNAL_API_SPEC_IABTechLab_DRAFT_for_Public_Comment.pdf
 
+### Finalized Specifications
+
+- https://iabtechlab.com/wp-content/uploads/2019/11/U.S.-Privacy-String-v1.0-IAB-Tech-Lab.pdf
+- https://iabtechlab.com/wp-content/uploads/2019/11/US-Privacy-USER-SIGNAL-API-SPEC-v1.0.pdf
+- https://iabtechlab.com/wp-content/uploads/2019/11/OpenRTB-Extension-U.S.-Privacy-IAB-Tech-Lab.pdf
+
 ## Technical Specification Summary: 
 
 I have here re-authored or duplicated the relevant parts of the technical specification given by the IAB as I best understand it, by combining information from all of their technical documents. 
@@ -44,7 +50,7 @@ The uspString is composed of three elements:
 *Current Possible Values*: [  
 	`N` = No  
 	`Y` = Yes  
-	`-` = Not Applicable  
+	`-` = Not Applicable
 ]  
 *Description*: Has explicit notice been provided. For instance, CCPA 1798.115(d).
 
@@ -55,16 +61,29 @@ The uspString is composed of three elements:
 *Current Possible Values*: [  
 	`N` = No, user has not opted out of the sale.  
 	`Y` = Yes, the user has opted out of their data being used for the sale.  
-	`-` = Not Applicable  
+	`-` = Not Applicable
 ]  
 *Description*: Has user opted-out of the sale of their data
+
+#### Limited Service Provider Agreement
+
+*Type*: ENUM  
+*Default Value*: `Y` (If you are using the specification then you are presumably a signatory)  
+*Current Possible Values*: [  
+	`N` = No, the publisher has not signed the LSPA.  
+	`Y` = Yes, the publisher has signed the LSPA.  
+	`-` = Not Applicable
+]  
+*Description*: "Publisher is a signatory to the IAB Limited Service Provider Agreement (LSPA) and the publisher declares that the transaction is covered as a “Covered Opt Out Transaction” or a “Non Opt Out Transaction” as those terms are defined in the Agreement"
 
 ---
 
 ### US Privacy String
 
 
-Any URL request that might send user data should have the `us_privacy` property appended to it with the uspString value set. This is an example: `http:/example.com/tracker?us_privacy=1YN`. This includes cases where it might not apply, in which case we set the url encoded value to `1--`.
+Any URL request that might send user data should have the `us_privacy` property appended to it with the uspString value set. This is an example: `http:/example.com/tracker?us_privacy=1YNY`. This includes cases where it might not apply, in which case we set the url encoded value to `1---`.
+
+In the case where this needs to be built using ad server macros, the naming convention is `${US_PRIVACY}`.
 
 ---
 
@@ -95,7 +114,7 @@ __uspapi('getUSPData', 1, (uspData, success) => {
 Also assume that future iterations of the framework will need to be available in parallel with past versions of the framework in the future. 
 
 If U.S. Privacy does not apply to this user in this context then the string in uspData object will
-contain “1--”.
+contain “1---”.
 
 A value of false will be passed as the argument to the success callback when no uspData object could be returned. 
 
@@ -107,12 +126,91 @@ uspData object to return:
 ```javascript
 {
  "version": 1, /* number indicating the U.S. Privacy spec version */
- "uspString": "1YN" /* string; not applicable: “1--” */
+ "uspString": "1YNY" /* string; not applicable: “1---” */
  /* number; 1 applies, 0 doesn’t apply, -1 not set */
  }
  ```
 
-The encoded string and any related information must be stored on *NSUserDefaults* (iOS) or *SharedPreferences* (Android). The key/field must be `IABUSPrivacy_String`
+ #### postMessage
+
+The `command` and `version` object properties correspond to the parameters of the same name defined in the argument sent to the __uspapi() method. The “sent message” should also supply a unique callId property to help match the request with a response as an ad may receive multiple messages from different advertising technology. 
+
+The postMessage function inside the iFrame should send: 
+
+```javascript
+{
+	__uspapiCall:
+		{
+			command: "command",
+			parameter: parameter,
+			version: version,
+			callId: uniqueId
+		}
+}
+```
+
+The IAB Framework does not currently define a purpose for the parameter property. 
+
+> The returnValue object property shall be the corresponding US Privacy String object for the command used upon sending the “sent message”. The success object property shall reflect the __uspapi() success callback argument and the callId will correspond to the “sent message” unique id passed in the callId property.
+
+The on-page function should reply to the postMessage with the following object:
+
+```javascript
+{
+	__uspapiReturn:
+		{
+			returnValue: returnValue,
+			success: boolean,
+			callId: uniqueId
+		}
+}
+```
+
+`returnValue` should mirror the `uspData` object passed into the callback on-page. 
+
+A flow might work like this: 
+
+In an advertiser iFrame:
+
+```javascript
+topPublisherWindow.postMessage({
+			__uspapiCall:
+			{
+				command: "getUSPData",
+				parameter: '???',
+				version: 1,
+				callId: 'xv582o'
+			});
+```
+
+In a publisher page:
+
+```javascript
+  if (event.data.hasOwnProperty('__uspapiCall')) {
+	var generatedConsentString = functionReturningConsentString();
+	event.source.postMessage(
+		{
+			__uspapiReturn:
+			{
+				returnValue: generatedConsentString,
+				success: true,
+				callId: event.data.__uspapiCall.callId
+			}
+		},
+		event.origin);
+  }
+  	return null;
+  }
+  window.addEventListener("message", receiveMessage, false);
+```
+
+ #### In-App
+
+The encoded string (ex: `1YNN` ) and any related information must be stored on  NSUserDefaults (iOS) or SharedPreferences (Android). The key/field must be `IABUSPrivacy_String` The conditions of that storage are: 
+
+- Vendors to easily access the string information when they need to;
+- The string and any related information to be persisted across app sessions;
+- Pre-parsing of the string to enable all typical use-cases, with flexibility to act according to the user’s choices.
 
 ---
 
@@ -134,7 +232,7 @@ A Digital Property has determined that U.S. Privacy applies to the transaction. 
 {
  "Regs": {
  "ext": {
- "us_privacy": "1YN"
+ "us_privacy": "1YNY"
  }
 }
 ```
@@ -145,7 +243,7 @@ A Digital Property has determined that U.S. Privacy applies to the transaction. 
 {
  "Regs": {
  "ext": {
- "us_privacy": "1NY"
+ "us_privacy": "1NYY"
  }
 }
 ```
@@ -155,7 +253,7 @@ A Digital Property has determined that U.S. Privacy does not apply to the transa
 ```javascript
  "Regs": {
  "ext": {
- "us_privacy": "1--"
+ "us_privacy": "1---"
  }
 }
 ```
@@ -163,13 +261,13 @@ A Digital Property has determined that U.S. Privacy does not apply to the transa
 ## System Requirements
 
 - All HTTP requests to ad systems should have `?us_privacy=` and the uspString value
-- The uspString value should be set to `1--` when the user is outside the enforcement zone.
-- The uspString value should default to `1YN` when the user is inside the enforcement zone. 
+- The uspString value should be set to `1---` when the user is outside the enforcement zone.
+- The uspString value should default to `1YNY` when the user is inside the enforcement zone. 
 - After initiation, the command `__uspapi('getUSPData', 1, (uspData, success) => { console.log(uspData.version, uspData.uspString, success) } );` should:
-	- Always return `1, 1--, true` outside of the enforcement zone
-	- Always return `1, 1YN, true` by default inside of the enforcement zone. 
+	- Always return `1, 1---, true` outside of the enforcement zone
+	- Always return `1, 1YNY, true` by default inside of the enforcement zone. 
 - Inside a non-safeframe ad iframe window.top.postMessage(‘getUSPData’) should trigger a response event containing a data payload that contains the properties of uspData identical to the __uspapi function callback.
-- The uspString value in all cases should change to `1YY` when the user specifies that they have opted out. 
+- The uspString value in all cases should change to `1YYY` when the user specifies that they have opted out. 
 
 
 ## AMP
