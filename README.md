@@ -274,6 +274,10 @@ A Digital Property has determined that U.S. Privacy does not apply to the transa
 
 - https://github.com/ampproject/amphtml/issues/24910 
 
+## Prebid
+
+- https://github.com/prebid/Prebid.js/blob/a30fc62119fb47740d47e1912752a4e0c73280d3/modules/consentManagementUsp.js
+
 ## Authorship of this document:
 
 This document was produced by Aram Zucker-Scharff while examining the IAB CCPA Framework for implementation at The Washington Post
