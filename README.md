@@ -187,17 +187,18 @@ In a publisher page:
 
 ```javascript
   if (event.data.hasOwnProperty('__uspapiCall')) {
-	var generatedConsentString = functionReturningConsentString();
-	event.source.postMessage(
-		{
-			__uspapiReturn:
+	__uspapi('getUSPData', 1, (uspData, success) => {
+		event.source.postMessage(
 			{
-				returnValue: generatedConsentString,
-				success: true,
-				callId: event.data.__uspapiCall.callId
-			}
-		},
-		event.origin);
+				__uspapiReturn:
+				{
+					returnValue: uspData,
+					success: success,
+					callId: event.data.__uspapiCall.callId
+				}
+			},
+			event.origin);
+	}
   }
   	return null;
   }
