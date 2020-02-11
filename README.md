@@ -26,6 +26,10 @@ The proposed IAB framework is relatively straightforward to implement, adding a 
 - https://iabtechlab.com/wp-content/uploads/2019/11/US-Privacy-USER-SIGNAL-API-SPEC-v1.0.pdf
 - https://iabtechlab.com/wp-content/uploads/2019/11/OpenRTB-Extension-U.S.-Privacy-IAB-Tech-Lab.pdf
 
+### Demo of Spec from IAB
+
+- https://github.com/InteractiveAdvertisingBureau/CCPA-reference-code
+
 ## Technical Specification Summary: 
 
 I have here re-authored or duplicated the relevant parts of the technical specification given by the IAB as I best understand it, by combining information from all of their technical documents. 
