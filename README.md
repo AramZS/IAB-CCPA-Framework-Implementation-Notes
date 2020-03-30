@@ -99,10 +99,11 @@ In the case where this needs to be built using ad server macros, the naming conv
 - The function should be available at all times, even if the data isn't.
 - You will likely want to use `function(){}.apply(null, callback)` to handle changes in the set of functions that this function will have to handle in the future. 
 
-- `command` string 'getUSPData'
+- `command` enum ['getUSPData', 'setUSPDNS', 'unsetUSPDNS']
 - `version` number U.S. Privacy spec version
 - `callback` function `function(uspData: uspdata,
 success: boolean)`
+- `additionalData` null|obj `{ userInit: true|false }`
 
 ```javascript
 __uspapi('getUSPData', 1, (uspData, success) => {
@@ -112,6 +113,26 @@ __uspapi('getUSPData', 1, (uspData, success) => {
 			// do something else
 			}
 		}
+);
+
+__uspapi('setUSPDNS', 1, (uspData, success) => {
+			if(success) {
+			// do something with uspData
+			} else {
+			// do something else
+			}
+		},
+		{ userInit: true }
+);
+
+__uspapi('unsetUSPDNS', 1, (uspData, success) => {
+			if(success) {
+			// do something with uspData
+			} else {
+			// do something else
+			}
+		},
+		{ userInit: true }
 );
 ```
 
@@ -127,13 +148,18 @@ A value of false will be passed as the argument to the success callback when no 
 The callback shall be invoked only once per api call with this command.
 
 uspData object to return:  
+
 ```javascript
 {
  "version": 1, /* number indicating the U.S. Privacy spec version */
  "uspString": "1YNY" /* string; not applicable: “1---” */
  /* number; 1 applies, 0 doesn’t apply, -1 not set */
+  "error": null 
+  /* If success == false then this should be set to a "String to alert user to reason why their setUSPDNS request was rejected" */
  }
  ```
+
+ It is expected that in the case where `success` is false the "error" property is set to a string, but in a case where the `success` value is `true`, nothing is expected on that property. 
 
  #### postMessage
 
@@ -165,12 +191,15 @@ The on-page function should reply to the postMessage with the following object:
 		{
 			returnValue: returnValue,
 			success: boolean,
-			callId: uniqueId
+			callId: uniqueId,
+			error: string
 		}
 }
 ```
 
 `returnValue` should mirror the `uspData` object passed into the callback on-page. 
+
+It is expected that in the case where `success` is false the "error" property is set to a string, but in a case where the `success` value is `true`, nothing is expected on that property. 
 
 A flow might work like this: 
 
@@ -181,7 +210,7 @@ topPublisherWindow.postMessage({
 			__uspapiCall:
 			{
 				command: "getUSPData",
-				parameter: '???',
+				parameter: null,
 				version: 1,
 				callId: 'xv582o'
 			});
@@ -204,6 +233,43 @@ In a publisher page:
 			event.origin);
 	}
   }
+  	return null;
+  }
+  window.addEventListener("message", receiveMessage, false);
+```
+
+In a DNS tool Extension:
+
+```javascript
+topPublisherWindow.postMessage({
+			__uspapiCall:
+			{
+				command: "setUSPDNS",
+				parameter: JSON.stringify({ userInit: true }),
+				version: 1,
+				callId: 'xv582g'
+			});
+```
+
+In a publisher page:
+
+```javascript
+  function receiveMessage(){
+	if (event.data.hasOwnProperty('__uspapiCall')) {
+		__uspapi('setUSPDNS', 1, (uspData, success) => {
+			event.source.postMessage(
+				{
+					__uspapiReturn:
+					{
+						returnValue: uspData,
+						success: success,
+						callId: event.data.__uspapiCall.callId
+					}
+				},
+				event.origin);
+		},
+		JSON.parse(event.data.__uspapiCall.parameter)
+	}
   	return null;
   }
   window.addEventListener("message", receiveMessage, false);
